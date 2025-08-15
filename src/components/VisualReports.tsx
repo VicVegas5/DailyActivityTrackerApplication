@@ -123,8 +123,6 @@ export const VisualReports: React.FC<VisualReportsProps> = ({ activities }) => {
     const displayQuarters = quartersToShow.slice(-8);
     
     for (const { year, quarter } of displayQuarters) {
-      const quarterDate = new Date(currentYear, now.getMonth() - (i * 3), 1);
-      
       const quarterActivities = activities.filter(activity => {
         const activityDate = new Date(activity.date);
         return getQuarter(activityDate) === quarter && activityDate.getFullYear() === year;
