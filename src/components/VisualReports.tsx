@@ -41,17 +41,22 @@ export const VisualReports: React.FC<VisualReportsProps> = ({ activities }) => {
   // Data processing for different time periods
   const processedData = useMemo(() => {
     const now = new Date();
-    const currentYear = now.getFullYear();
+    const currentYear = Math.max(now.getFullYear(), 2025); // Start from 2025 at minimum
+    const startDate = new Date(2025, 3, 1); // April 1, 2025 (Q2 start)
     
     const weeklyData = [];
     const monthlyData = [];
     const quarterlyData = [];
     const yearlyData = [];
 
-    // Generate data for the last 12 weeks
+    // Generate data for the last 12 weeks (but not before Q2 2025)
     for (let i = 11; i >= 0; i--) {
       const weekStart = new Date(now);
       weekStart.setDate(now.getDate() - (i * 7));
+      
+      // Skip weeks before Q2 2025
+      if (weekStart < startDate) continue;
+      
       const weekNumber = getWeekNumber(weekStart);
       const year = weekStart.getFullYear();
       
@@ -70,9 +75,12 @@ export const VisualReports: React.FC<VisualReportsProps> = ({ activities }) => {
       });
     }
 
-    // Generate data for the last 12 months
+    // Generate data for the last 12 months (but not before Q2 2025)
     for (let i = 11; i >= 0; i--) {
       const monthDate = new Date(currentYear, now.getMonth() - i, 1);
+      
+      // Skip months before Q2 2025
+      if (monthDate < startDate) continue;
       const monthName = monthDate.toLocaleDateString('en-US', { month: 'short' });
       
       const monthActivities = activities.filter(activity => {
@@ -90,11 +98,32 @@ export const VisualReports: React.FC<VisualReportsProps> = ({ activities }) => {
       });
     }
 
-    // Generate data for the last 4 quarters
-    for (let i = 3; i >= 0; i--) {
+    // Generate data starting from Q2 2025
+    const currentQuarter = getQuarter(now);
+    const quartersToShow = [];
+    
+    // Start from Q2 2025
+    let startYear = 2025;
+    let startQuarter = 2; // Q2
+    
+    // Generate quarters from Q2 2025 to current quarter
+    let tempYear = startYear;
+    let tempQuarter = startQuarter;
+    
+    while (tempYear < currentYear || (tempYear === currentYear && tempQuarter <= currentQuarter)) {
+      quartersToShow.push({ year: tempYear, quarter: tempQuarter });
+      tempQuarter++;
+      if (tempQuarter > 4) {
+        tempQuarter = 1;
+        tempYear++;
+      }
+    }
+    
+    // Take the last 8 quarters maximum for display
+    const displayQuarters = quartersToShow.slice(-8);
+    
+    for (const { year, quarter } of displayQuarters) {
       const quarterDate = new Date(currentYear, now.getMonth() - (i * 3), 1);
-      const quarter = getQuarter(quarterDate);
-      const year = quarterDate.getFullYear();
       
       const quarterActivities = activities.filter(activity => {
         const activityDate = new Date(activity.date);
@@ -110,9 +139,13 @@ export const VisualReports: React.FC<VisualReportsProps> = ({ activities }) => {
       });
     }
 
-    // Generate data for the last 3 years
-    for (let i = 2; i >= 0; i--) {
-      const year = currentYear - i;
+    // Generate data from 2025 to current year
+    const yearsToShow = [];
+    for (let year = 2025; year <= currentYear; year++) {
+      yearsToShow.push(year);
+    }
+    
+    for (const year of yearsToShow) {
       
       const yearActivities = activities.filter(activity => {
         const activityDate = new Date(activity.date);
