@@ -1,12 +1,12 @@
+import { CategoryName, ActivityOption } from '../config/categories';
+
 export interface Activity {
   id: string;
-  name: string;
-  category: string;
+  category: CategoryName;
+  activity: ActivityOption;
   startTime: string;
   endTime: string;
-  duration: number; // in minutes
-  priority: 'low' | 'medium' | 'high';
-  completed: boolean;
+  duration: number;
   notes?: string;
   date: string;
 }

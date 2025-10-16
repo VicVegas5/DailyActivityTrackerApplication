@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Save, X } from 'lucide-react';
 import { Activity } from '../types/Activity';
-import { TimerScreen } from './TimerScreen';
+import { CATEGORIES, CategoryName, ActivityOption } from '../config/categories';
 
 interface ActivityFormProps {
   onAdd: (activity: Omit<Activity, 'id'>) => void;
@@ -11,54 +11,39 @@ interface ActivityFormProps {
 }
 
 export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isOpen, editingActivity }) => {
-  const [showTimer, setShowTimer] = useState(false);
-  const [timerActivity, setTimerActivity] = useState<string>('');
-  const [timerDuration, setTimerDuration] = useState<number>(50);
-
-  const [formData, setFormData] = useState({
-    name: editingActivity?.name || '',
+  const [formData, setFormData] = useState<{
+    category: CategoryName | '';
+    activity: ActivityOption | '';
+    startTime: string;
+    endTime: string;
+    notes: string;
+  }>({
     category: editingActivity?.category || '',
+    activity: editingActivity?.activity || '',
     startTime: editingActivity?.startTime || '',
     endTime: editingActivity?.endTime || '',
-    priority: 'medium' as const,
-    completed: editingActivity?.completed || false,
     notes: editingActivity?.notes || '',
   });
 
-  // Auto-fill current time and 50 minutes later
-  React.useEffect(() => {
-    if (!editingActivity && isOpen) {
-      const now = new Date();
-      const later = new Date(now.getTime() + 50 * 60 * 1000);
-      setFormData(prev => ({
-        ...prev,
-        startTime: now.toTimeString().slice(0, 5),
-        endTime: later.toTimeString().slice(0, 5),
-      }));
-    }
-  }, [isOpen, editingActivity]);
+  const availableActivities = formData.category ? CATEGORIES[formData.category as CategoryName] : [];
 
   React.useEffect(() => {
     if (editingActivity) {
       setFormData({
-        name: editingActivity.name,
         category: editingActivity.category,
+        activity: editingActivity.activity,
         startTime: editingActivity.startTime,
         endTime: editingActivity.endTime,
-        priority: editingActivity.priority,
-        completed: editingActivity.completed,
         notes: editingActivity.notes || '',
       });
     } else {
       const now = new Date();
       const later = new Date(now.getTime() + 50 * 60 * 1000);
       setFormData({
-        name: '',
         category: '',
+        activity: '',
         startTime: now.toTimeString().slice(0, 5),
         endTime: later.toTimeString().slice(0, 5),
-        priority: 'medium',
-        completed: false,
         notes: '',
       });
     }
@@ -66,8 +51,8 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.name || !formData.startTime || !formData.endTime) {
+
+    if (!formData.category || !formData.activity || !formData.startTime || !formData.endTime) {
       alert('Please fill in all required fields');
       return;
     }
@@ -77,52 +62,27 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
     const duration = Math.max(0, (end.getTime() - start.getTime()) / (1000 * 60));
 
     const activity: Omit<Activity, 'id'> = {
-      ...formData,
+      category: formData.category as CategoryName,
+      activity: formData.activity as ActivityOption,
+      startTime: formData.startTime,
+      endTime: formData.endTime,
       duration,
+      notes: formData.notes,
       date: new Date().toISOString().split('T')[0],
     };
 
     onAdd(activity);
-    
-    // Start timer if this is a new activity
-    if (!editingActivity) {
-      setTimerActivity(formData.name);
-      setTimerDuration(duration);
-      setShowTimer(true);
-    }
-    
+
+    const now = new Date();
+    const later = new Date(now.getTime() + 50 * 60 * 1000);
     setFormData({
-      name: '',
       category: '',
-      startTime: '',
-      endTime: '',
-      priority: 'medium',
-      completed: false,
+      activity: '',
+      startTime: now.toTimeString().slice(0, 5),
+      endTime: later.toTimeString().slice(0, 5),
       notes: '',
     });
   };
-
-  const handleTimerComplete = () => {
-    setShowTimer(false);
-    // The timer will show a completion prompt automatically
-  };
-
-  const handleTimerStop = () => {
-    setShowTimer(false);
-  };
-
-  // Show timer screen if active
-  if (showTimer) {
-    return (
-      <TimerScreen
-        isActive={showTimer}
-        duration={timerDuration}
-        activityName={timerActivity}
-        onComplete={handleTimerComplete}
-        onStop={handleTimerStop}
-      />
-    );
-  }
 
   if (!isOpen) return null;
 
@@ -144,28 +104,35 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Activity Name *
+              Category *
             </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            <select
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value as CategoryName, activity: '' })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g., Team meeting"
-            />
+            >
+              <option value="">Select a category</option>
+              {Object.keys(CATEGORIES).map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Category
+              Activity *
             </label>
-            <input
-              type="text"
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+            <select
+              value={formData.activity}
+              onChange={(e) => setFormData({ ...formData, activity: e.target.value as ActivityOption })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g., Work, Personal, Health"
-            />
+              disabled={!formData.category}
+            >
+              <option value="">Select an activity</option>
+              {availableActivities.map((act) => (
+                <option key={act} value={act}>{act}</option>
+              ))}
+            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -196,21 +163,6 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Priority
-            </label>
-            <select
-              value={formData.priority}
-              onChange={(e) => setFormData({ ...formData, priority: e.target.value as 'low' | 'medium' | 'high' })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
               Notes
             </label>
             <textarea
@@ -219,19 +171,6 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-20"
               placeholder="Additional notes..."
             />
-          </div>
-
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="completed"
-              checked={formData.completed}
-              onChange={(e) => setFormData({ ...formData, completed: e.target.checked })}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label htmlFor="completed" className="ml-2 block text-sm text-gray-700">
-              Mark as completed
-            </label>
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">

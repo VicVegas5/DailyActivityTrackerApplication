@@ -8,7 +8,6 @@ interface StatsCardProps {
 
 export const StatsCard: React.FC<StatsCardProps> = ({ activities }) => {
   const totalActivities = activities.length;
-  const completedActivities = activities.filter(a => a.completed).length;
   const totalDuration = activities.reduce((sum, activity) => sum + activity.duration, 0);
   const avgDuration = totalActivities > 0 ? totalDuration / totalActivities : 0;
 
@@ -18,7 +17,12 @@ export const StatsCard: React.FC<StatsCardProps> = ({ activities }) => {
     return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   };
 
-  const completionRate = totalActivities > 0 ? Math.round((completedActivities / totalActivities) * 100) : 0;
+  const categoryCounts = activities.reduce((acc, activity) => {
+    acc[activity.category] = (acc[activity.category] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const topCategory = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'None';
 
   const stats = [
     {
@@ -29,25 +33,25 @@ export const StatsCard: React.FC<StatsCardProps> = ({ activities }) => {
       bgColor: 'bg-blue-50',
     },
     {
-      title: 'Completed',
-      value: completedActivities,
-      icon: CheckCircle,
+      title: 'Total Time',
+      value: formatDuration(totalDuration),
+      icon: Clock,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
     },
     {
-      title: 'Total Time',
-      value: formatDuration(totalDuration),
-      icon: Clock,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-    },
-    {
-      title: 'Completion Rate',
-      value: `${completionRate}%`,
+      title: 'Average Duration',
+      value: formatDuration(avgDuration),
       icon: BarChart3,
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',
+    },
+    {
+      title: 'Top Category',
+      value: topCategory,
+      icon: CheckCircle,
+      color: 'text-teal-600',
+      bgColor: 'bg-teal-50',
     },
   ];
 
