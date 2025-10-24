@@ -1,15 +1,22 @@
-import React, { useState } from 'react';
-import { Plus, List } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, List, Download } from 'lucide-react';
 import { ActivityForm } from './components/ActivityForm';
 import { ActivityTable } from './components/ActivityTable';
 import { StatsCard } from './components/StatsCard';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { Activity } from './types/Activity';
+import { exportToCSV } from './utils/fileExport';
 
 function App() {
   const [activities, setActivities] = useLocalStorage<Activity[]>('daily-activities', []);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+
+  useEffect(() => {
+    if (activities.length > 0) {
+      exportToCSV(activities, 'activity-log.csv');
+    }
+  }, [activities]);
 
   const handleAddActivity = (activityData: Omit<Activity, 'id'>) => {
     const newActivity: Activity = {
@@ -69,7 +76,16 @@ function App() {
                 </p>
               </div>
             </div>
-            <div className="mt-4 sm:mt-0">
+            <div className="mt-4 sm:mt-0 flex space-x-3">
+              <button
+                onClick={() => exportToCSV(activities, 'activity-log.csv')}
+                disabled={activities.length === 0}
+                className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Download CSV file"
+              >
+                <Download size={20} />
+                <span className="font-medium">Export CSV</span>
+              </button>
               <button
                 onClick={() => setIsFormOpen(true)}
                 className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg"
