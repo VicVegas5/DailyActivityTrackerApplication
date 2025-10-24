@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, List, Download } from 'lucide-react';
+import { Plus, List, Download, BarChart3 } from 'lucide-react';
 import { ActivityForm } from './components/ActivityForm';
 import { ActivityTable } from './components/ActivityTable';
 import { StatsCard } from './components/StatsCard';
+import { GraphicalView } from './components/GraphicalView';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { Activity } from './types/Activity';
 import { exportToCSV } from './utils/fileExport';
@@ -10,6 +11,7 @@ import { exportToCSV } from './utils/fileExport';
 function App() {
   const [activities, setActivities] = useLocalStorage<Activity[]>('daily-activities', []);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isGraphViewOpen, setIsGraphViewOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
 
   useEffect(() => {
@@ -76,7 +78,16 @@ function App() {
                 </p>
               </div>
             </div>
-            <div className="mt-4 sm:mt-0 flex space-x-3">
+            <div className="mt-4 sm:mt-0 flex flex-wrap gap-3">
+              <button
+                onClick={() => setIsGraphViewOpen(true)}
+                disabled={activities.length === 0}
+                className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                title="View analytics and graphs"
+              >
+                <BarChart3 size={20} />
+                <span className="font-medium">Analytics</span>
+              </button>
               <button
                 onClick={() => exportToCSV(activities, 'activity-log.csv')}
                 disabled={activities.length === 0}
@@ -126,6 +137,12 @@ function App() {
             setEditingActivity(null);
           }}
           editingActivity={editingActivity}
+        />
+
+        <GraphicalView
+          isOpen={isGraphViewOpen}
+          onClose={() => setIsGraphViewOpen(false)}
+          activities={activities}
         />
       </div>
     </div>
