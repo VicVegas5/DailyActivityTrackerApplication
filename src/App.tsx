@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, List, Download, BarChart3 } from 'lucide-react';
+import { Plus, List, Download, BarChart3, FileBarChart } from 'lucide-react';
 import { ActivityForm } from './components/ActivityForm';
 import { ActivityTable } from './components/ActivityTable';
 import { StatsCard } from './components/StatsCard';
 import { GraphicalView } from './components/GraphicalView';
+import { ReportPage } from './components/ReportPage';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { Activity } from './types/Activity';
 import { exportToCSV } from './utils/fileExport';
@@ -12,6 +13,7 @@ function App() {
   const [activities, setActivities] = useLocalStorage<Activity[]>('daily-activities', []);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isGraphViewOpen, setIsGraphViewOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
 
   useEffect(() => {
@@ -80,6 +82,15 @@ function App() {
             </div>
             <div className="mt-4 sm:mt-0 flex flex-wrap gap-3">
               <button
+                onClick={() => setIsReportOpen(true)}
+                disabled={activities.length === 0}
+                className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-lg hover:from-teal-700 hover:to-teal-800 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                title="View detailed reports"
+              >
+                <FileBarChart size={20} />
+                <span className="font-medium">Reports</span>
+              </button>
+              <button
                 onClick={() => setIsGraphViewOpen(true)}
                 disabled={activities.length === 0}
                 className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
@@ -142,6 +153,12 @@ function App() {
         <GraphicalView
           isOpen={isGraphViewOpen}
           onClose={() => setIsGraphViewOpen(false)}
+          activities={activities}
+        />
+
+        <ReportPage
+          isOpen={isReportOpen}
+          onClose={() => setIsReportOpen(false)}
           activities={activities}
         />
       </div>
