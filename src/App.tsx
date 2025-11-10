@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Plus, List, Download, BarChart3, FileBarChart } from 'lucide-react';
 import { ActivityForm } from './components/ActivityForm';
 import { ActivityTable } from './components/ActivityTable';
@@ -15,12 +15,6 @@ function App() {
   const [isGraphViewOpen, setIsGraphViewOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
-
-  useEffect(() => {
-    if (activities.length > 0) {
-      exportToCSV(activities, 'activity-log.csv');
-    }
-  }, [activities]);
 
   const handleAddActivity = (activityData: Omit<Activity, 'id'>) => {
     const newActivity: Activity = {
