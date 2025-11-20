@@ -1,0 +1,164 @@
+import React, { useState, useEffect } from 'react';
+import { X, Check } from 'lucide-react';
+import { Stopwatch } from './Stopwatch';
+import { Activity } from '../types/Activity';
+import { CATEGORIES, CategoryName } from '../config/categories';
+
+interface StopwatchScreenProps {
+  category: CategoryName;
+  activityName: string;
+  targetDuration: number;
+  onSave: (activity: Omit<Activity, 'id'>) => void;
+  onCancel: () => void;
+}
+
+export const StopwatchScreen: React.FC<StopwatchScreenProps> = ({
+  category,
+  activityName,
+  targetDuration,
+  onSave,
+  onCancel,
+}) => {
+  const [seconds, setSeconds] = useState(0);
+  const [hasReachedTarget, setHasReachedTarget] = useState(false);
+  const [notes, setNotes] = useState('');
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSeconds((prev) => {
+        const newSeconds = prev + 1;
+        const minutes = Math.floor(newSeconds / 60);
+
+        if (minutes >= targetDuration && !hasReachedTarget) {
+          setHasReachedTarget(true);
+        }
+
+        return newSeconds;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [targetDuration, hasReachedTarget]);
+
+  const minutes = Math.floor(seconds / 60);
+  const displaySeconds = seconds % 60;
+
+  const startTime = new Date();
+  startTime.setHours(startTime.getHours(), startTime.getMinutes(), 0);
+
+  const endTime = new Date();
+  endTime.setSeconds(endTime.getSeconds() + seconds);
+
+  const getCategoryColor = (cat: CategoryName) => {
+    const colors: Record<CategoryName, string> = {
+      Body: 'from-red-500 to-red-600',
+      Home: 'from-orange-500 to-orange-600',
+      Finances: 'from-green-500 to-green-600',
+      Job: 'from-blue-500 to-blue-600',
+      Projects: 'from-purple-600 to-purple-700',
+      Music: 'from-pink-500 to-pink-600',
+    };
+    return colors[cat] || 'from-gray-500 to-gray-600';
+  };
+
+  const handleSave = () => {
+    const activity: Omit<Activity, 'id'> = {
+      category,
+      activity: activityName as any,
+      startTime: startTime.toTimeString().slice(0, 5),
+      endTime: endTime.toTimeString().slice(0, 5),
+      duration: seconds / 60,
+      notes,
+      date: new Date().toISOString().split('T')[0],
+    };
+
+    onSave(activity);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl p-8 w-full max-w-md">
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-2xl font-bold text-gray-900">Activity Timer</h2>
+          <button
+            onClick={onCancel}
+            className="text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        <div className="flex flex-col items-center space-y-8">
+          <div className={`w-full bg-gradient-to-r ${getCategoryColor(category)} rounded-lg p-6 text-center shadow-lg`}>
+            <div className="text-white">
+              <div className="text-sm font-semibold opacity-90 mb-2">{category}</div>
+              <div className="text-2xl font-bold">{activityName}</div>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center space-y-4 w-full">
+            <div className="relative">
+              <div className="w-40 h-40 rounded-full border-8 border-gray-200 flex items-center justify-center bg-gray-50">
+                <div className="text-center">
+                  <div className="text-6xl font-bold text-gray-900">
+                    {String(minutes).padStart(2, '0')}:{String(displaySeconds).padStart(2, '0')}
+                  </div>
+                </div>
+              </div>
+              {hasReachedTarget && (
+                <div className="absolute -top-4 -right-4 w-12 h-12 bg-yellow-400 rounded-full animate-pulse flex items-center justify-center shadow-lg">
+                  <span className="text-2xl">⚡</span>
+                </div>
+              )}
+            </div>
+
+            {hasReachedTarget && (
+              <div className="text-center">
+                <div className="text-yellow-600 font-semibold text-lg animate-pulse">
+                  Target duration reached!
+                </div>
+                <div className="text-sm text-gray-600 mt-2">
+                  End time: {endTime.toTimeString().slice(0, 5)}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="w-full space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Notes
+              </label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 h-20"
+                placeholder="Add any notes about this activity..."
+              />
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4">
+              <button
+                onClick={onCancel}
+                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                className={`px-4 py-2 text-white rounded-md flex items-center space-x-2 transition-all ${
+                  hasReachedTarget
+                    ? 'bg-green-600 hover:bg-green-700 animate-pulse'
+                    : 'bg-green-500 hover:bg-green-600'
+                }`}
+              >
+                <Check size={18} />
+                <span>Save Activity</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Save, X } from 'lucide-react';
+import { Save, X, Play } from 'lucide-react';
 import { Activity } from '../types/Activity';
 import { CATEGORIES, CategoryName, ActivityOption } from '../config/categories';
+import { StopwatchScreen } from './StopwatchScreen';
 
 interface ActivityFormProps {
   onAdd: (activity: Omit<Activity, 'id'>) => void;
@@ -17,13 +18,17 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
     startTime: string;
     endTime: string;
     notes: string;
+    targetDuration: number;
   }>({
     category: editingActivity?.category || '',
     activity: editingActivity?.activity || '',
     startTime: editingActivity?.startTime || '',
     endTime: editingActivity?.endTime || '',
     notes: editingActivity?.notes || '',
+    targetDuration: 20,
   });
+
+  const [showStopwatch, setShowStopwatch] = useState(false);
 
   const availableActivities = formData.category ? CATEGORIES[formData.category as CategoryName] : [];
 
@@ -35,6 +40,7 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
         startTime: editingActivity.startTime,
         endTime: editingActivity.endTime,
         notes: editingActivity.notes || '',
+        targetDuration: 20,
       });
     } else {
       const now = new Date();
@@ -45,9 +51,38 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
         startTime: now.toTimeString().slice(0, 5),
         endTime: later.toTimeString().slice(0, 5),
         notes: '',
+        targetDuration: 20,
       });
     }
   }, [editingActivity]);
+
+  const handleStartStopwatch = () => {
+    if (!formData.category || !formData.activity || !formData.targetDuration) {
+      alert('Please select a category, activity, and set a target duration');
+      return;
+    }
+    setShowStopwatch(true);
+  };
+
+  const handleStopwatchSave = (activity: Omit<Activity, 'id'>) => {
+    onAdd(activity);
+    setShowStopwatch(false);
+
+    const now = new Date();
+    const later = new Date(now.getTime() + 50 * 60 * 1000);
+    setFormData({
+      category: '',
+      activity: '',
+      startTime: now.toTimeString().slice(0, 5),
+      endTime: later.toTimeString().slice(0, 5),
+      notes: '',
+      targetDuration: 20,
+    });
+  };
+
+  const handleStopwatchCancel = () => {
+    setShowStopwatch(false);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,6 +120,20 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
   };
 
   if (!isOpen) return null;
+
+  if (showStopwatch && formData.category && formData.activity) {
+    return (
+      <>
+        <StopwatchScreen
+          category={formData.category as CategoryName}
+          activityName={formData.activity as string}
+          targetDuration={formData.targetDuration}
+          onSave={handleStopwatchSave}
+          onCancel={handleStopwatchCancel}
+        />
+      </>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -135,6 +184,19 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
             </select>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Target Duration (minutes) *
+            </label>
+            <input
+              type="number"
+              min="1"
+              value={formData.targetDuration}
+              onChange={(e) => setFormData({ ...formData, targetDuration: parseInt(e.target.value) || 20 })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -181,6 +243,16 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
             >
               Cancel
             </button>
+            {!editingActivity && (
+              <button
+                type="button"
+                onClick={handleStartStopwatch}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center space-x-2"
+              >
+                <Play size={18} />
+                <span>Start Stopwatch</span>
+              </button>
+            )}
             <button
               type="submit"
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center space-x-2"
