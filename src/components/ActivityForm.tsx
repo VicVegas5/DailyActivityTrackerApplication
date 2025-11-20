@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Save, X, Play } from 'lucide-react';
 import { Activity } from '../types/Activity';
-import { CATEGORIES, CategoryName, ActivityOption } from '../config/categories';
+import { CATEGORIES, CategoryName } from '../config/categories';
 import { StopwatchScreen } from './StopwatchScreen';
 
 interface ActivityFormProps {
@@ -14,7 +14,7 @@ interface ActivityFormProps {
 export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isOpen, editingActivity }) => {
   const [formData, setFormData] = useState<{
     category: CategoryName | '';
-    activity: ActivityOption | '';
+    activity: string;
     startTime: string;
     endTime: string;
     notes: string;
@@ -29,8 +29,6 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
   });
 
   const [showStopwatch, setShowStopwatch] = useState(false);
-
-  const availableActivities = formData.category ? CATEGORIES[formData.category as CategoryName] : [];
 
   React.useEffect(() => {
     if (editingActivity) {
@@ -87,7 +85,7 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.category || !formData.activity || !formData.startTime || !formData.endTime) {
+    if (!formData.category || !formData.activity.trim() || !formData.startTime || !formData.endTime) {
       alert('Please fill in all required fields');
       return;
     }
@@ -98,7 +96,7 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
 
     const activity: Omit<Activity, 'id'> = {
       category: formData.category as CategoryName,
-      activity: formData.activity as ActivityOption,
+      activity: formData.activity.trim(),
       startTime: formData.startTime,
       endTime: formData.endTime,
       duration,
@@ -116,6 +114,7 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
       startTime: now.toTimeString().slice(0, 5),
       endTime: later.toTimeString().slice(0, 5),
       notes: '',
+      targetDuration: 20,
     });
   };
 
@@ -171,17 +170,14 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Activity *
             </label>
-            <select
+            <input
+              type="text"
               value={formData.activity}
-              onChange={(e) => setFormData({ ...formData, activity: e.target.value as ActivityOption })}
+              onChange={(e) => setFormData({ ...formData, activity: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter activity name"
               disabled={!formData.category}
-            >
-              <option value="">Select an activity</option>
-              {availableActivities.map((act) => (
-                <option key={act} value={act}>{act}</option>
-              ))}
-            </select>
+            />
           </div>
 
           <div>
