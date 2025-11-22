@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check } from 'lucide-react';
+import { X, Check, Play } from 'lucide-react';
 
 import { Activity } from '../types/Activity';
 import { CategoryName } from '../config/categories';
@@ -21,71 +21,66 @@ export const StopwatchScreen: React.FC<StopwatchScreenProps> = ({
 }) => {
   const [seconds, setSeconds] = useState(0);
   const [hasReachedTarget, setHasReachedTarget] = useState(false);
-  const [notes, setNotes] = useState('');
+  const [startTimestamp, setStartTimestamp] = useState<number | null>(null);
+  const [isRunning, setIsRunning] = useState(false);
 
-  const [startTimestamp, setStartTimestamp] = useState<number>(Date.now());
   const STORAGE_KEY = 'stopwatch_session';
 
   useEffect(() => {
     const savedSession = localStorage.getItem(STORAGE_KEY);
-    let start = Date.now();
 
     if (savedSession) {
       try {
         const session = JSON.parse(savedSession);
         // Resume if it matches the current activity context
         if (session.category === category && session.activityName === activityName) {
-          start = session.startTime;
-          setNotes(session.notes || '');
+          setStartTimestamp(session.startTime);
+          setIsRunning(true);
+
+          // Calculate elapsed time immediately
+          const now = Date.now();
+          const elapsedSeconds = Math.floor((now - session.startTime) / 1000);
+          setSeconds(elapsedSeconds);
         }
       } catch (e) {
         console.error('Failed to parse stopwatch session', e);
       }
     }
+  }, [category, activityName]);
 
-    setStartTimestamp(start);
-
-    // Save initial or resumed session
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      startTime: start,
-      category,
-      activityName,
-      targetDuration,
-      notes
-    }));
-
-    const updateTimer = () => {
-      const now = Date.now();
-      const elapsedSeconds = Math.floor((now - start) / 1000);
-      setSeconds(elapsedSeconds);
-
-      const minutes = Math.floor(elapsedSeconds / 60);
-      if (minutes >= targetDuration && !hasReachedTarget) {
-        setHasReachedTarget(true);
-      }
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-
-    return () => clearInterval(interval);
-  }, [category, activityName, targetDuration]); // Re-run if props change, but logic handles resume
-
-  // Persist notes
   useEffect(() => {
-    const savedSession = localStorage.getItem(STORAGE_KEY);
-    if (savedSession) {
-      try {
-        const session = JSON.parse(savedSession);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
-          ...session,
-          notes
-        }));
-      } catch (e) {
-        // Ignore
-      }
+    let interval: ReturnType<typeof setInterval>;
+
+    if (isRunning && startTimestamp) {
+      // Save session
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        startTime: startTimestamp,
+        category,
+        activityName,
+        targetDuration
+      }));
+
+      const updateTimer = () => {
+        const now = Date.now();
+        const elapsedSeconds = Math.floor((now - startTimestamp) / 1000);
+        setSeconds(elapsedSeconds);
+
+        const minutes = Math.floor(elapsedSeconds / 60);
+        if (minutes >= targetDuration && !hasReachedTarget) {
+          setHasReachedTarget(true);
+        }
+      };
+
+      updateTimer();
+      interval = setInterval(updateTimer, 1000);
     }
-  }, [notes]);
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isRunning, startTimestamp, category, activityName, targetDuration, hasReachedTarget]);
+
+
 
   useEffect(() => {
     if (hasReachedTarget) {
@@ -93,16 +88,10 @@ export const StopwatchScreen: React.FC<StopwatchScreenProps> = ({
     }
   }, [hasReachedTarget]);
 
-  const [isMinimized, setIsMinimized] = useState(true);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   const minutes = Math.floor(seconds / 60);
   const displaySeconds = seconds % 60;
-
-  const startTime = new Date(startTimestamp);
-  // startTime.setHours(startTime.getHours(), startTime.getMinutes(), 0); // Don't reset minutes/seconds, use actual start time
-
-  const endTime = new Date();
-  endTime.setSeconds(endTime.getSeconds() + seconds);
 
   const getCategoryColor = (cat: CategoryName) => {
     const colors: Record<CategoryName, string> = {
@@ -116,15 +105,34 @@ export const StopwatchScreen: React.FC<StopwatchScreenProps> = ({
     return colors[cat] || 'from-gray-500 to-gray-600';
   };
 
+  const handleStart = () => {
+    const now = Date.now();
+    setStartTimestamp(now);
+    setIsRunning(true);
+  };
+
   const handleSave = () => {
+    if (!isRunning || !startTimestamp) {
+      alert('Please start stopwatch first.');
+      return;
+    }
+
+    const endTimestamp = Date.now();
+    const durationSeconds = (endTimestamp - startTimestamp) / 1000;
+    const durationMinutes = durationSeconds / 60;
+
+    // Round to 2 decimal places
+    const roundedDuration = Math.round(durationMinutes * 100) / 100;
+
     localStorage.removeItem(STORAGE_KEY);
+
     const activity: Omit<Activity, 'id'> = {
       category,
       activity: activityName,
-      startTime: startTime.toTimeString().slice(0, 5),
-      endTime: endTime.toTimeString().slice(0, 5),
-      duration: seconds / 60,
-      notes,
+      startTime: new Date(startTimestamp).toISOString(),
+      endTime: new Date(endTimestamp).toISOString(),
+      duration: roundedDuration,
+      notes: '',
       date: new Date().toISOString().split('T')[0],
     };
 
@@ -169,6 +177,7 @@ export const StopwatchScreen: React.FC<StopwatchScreenProps> = ({
           onClick={() => setIsMinimized(true)}
           className="absolute top-4 left-4 text-gray-400 hover:text-gray-600 transition-colors"
           title="Minimize"
+          disabled={!isRunning}
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 3 21 3 21 9"></polyline>
@@ -217,47 +226,46 @@ export const StopwatchScreen: React.FC<StopwatchScreenProps> = ({
                 <div className="text-yellow-600 font-semibold text-lg animate-pulse">
                   Target duration reached!
                 </div>
-                <div className="text-sm text-gray-600 mt-2">
-                  End time: {endTime.toTimeString().slice(0, 5)}
-                </div>
               </div>
             )}
           </div>
 
           <div className="w-full space-y-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Notes
-              </label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 h-20"
-                placeholder="Add any notes about this activity..."
-              />
-            </div>
+
 
             <div className="flex justify-end space-x-3 pt-4">
-              <button
-                onClick={handleCancel}
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                className={`px-4 py-2 text-white rounded-md flex items-center space-x-2 transition-all ${hasReachedTarget
-                  ? 'bg-green-600 hover:bg-green-700 animate-pulse'
-                  : 'bg-green-500 hover:bg-green-600'
-                  }`}
-              >
-                <Check size={18} />
-                <span>Save Activity</span>
-              </button>
+              {!isRunning ? (
+                <button
+                  onClick={handleStart}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+                >
+                  <Play size={18} />
+                  <span>Start Stopwatch</span>
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={handleCancel}
+                    className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    className={`px-4 py-2 text-white rounded-md flex items-center space-x-2 transition-all ${hasReachedTarget
+                      ? 'bg-green-600 hover:bg-green-700 animate-pulse'
+                      : 'bg-green-500 hover:bg-green-600'
+                      }`}
+                  >
+                    <Check size={18} />
+                    <span>Save Activity</span>
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
-      </div>I
+      </div>
     </div>
   );
 };

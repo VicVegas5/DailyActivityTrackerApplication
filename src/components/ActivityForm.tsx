@@ -25,7 +25,7 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
     startTime: editingActivity?.startTime || '',
     endTime: editingActivity?.endTime || '',
     notes: editingActivity?.notes || '',
-    targetDuration: 20,
+    targetDuration: 2,
   });
 
   const [showStopwatch, setShowStopwatch] = useState(false);
@@ -35,8 +35,8 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
       setFormData({
         category: editingActivity.category,
         activity: editingActivity.activity,
-        startTime: editingActivity.startTime,
-        endTime: editingActivity.endTime,
+        startTime: editingActivity.startTime.includes('T') ? new Date(editingActivity.startTime).toTimeString().slice(0, 5) : editingActivity.startTime,
+        endTime: editingActivity.endTime.includes('T') ? new Date(editingActivity.endTime).toTimeString().slice(0, 5) : editingActivity.endTime,
         notes: editingActivity.notes || '',
         targetDuration: 20,
       });
@@ -61,14 +61,14 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
       }
 
       const now = new Date();
-      const later = new Date(now.getTime() + 50 * 60 * 1000);
+      const later = new Date(now.getTime() + 2 * 60 * 1000);
       setFormData({
         category: '',
         activity: '',
         startTime: now.toTimeString().slice(0, 5),
         endTime: later.toTimeString().slice(0, 5),
         notes: '',
-        targetDuration: 20,
+        targetDuration: 2,
       });
     }
   }, [editingActivity]);
@@ -93,7 +93,7 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
       startTime: now.toTimeString().slice(0, 5),
       endTime: later.toTimeString().slice(0, 5),
       notes: '',
-      targetDuration: 20,
+      targetDuration: 2,
     });
   };
 
@@ -109,31 +109,37 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
       return;
     }
 
-    const start = new Date(`2000-01-01T${formData.startTime}`);
-    const end = new Date(`2000-01-01T${formData.endTime}`);
-    const duration = Math.max(0, (end.getTime() - start.getTime()) / (1000 * 60));
+    const activityDate = editingActivity ? editingActivity.date : new Date().toISOString().split('T')[0];
+    const startIso = new Date(`${activityDate}T${formData.startTime}:00`).toISOString();
+    const endIso = new Date(`${activityDate}T${formData.endTime}:00`).toISOString();
+
+    const startObj = new Date(startIso);
+    const endObj = new Date(endIso);
+
+    let duration = Math.max(0, (endObj.getTime() - startObj.getTime()) / (1000 * 60));
+    duration = parseFloat(duration.toFixed(2));
 
     const activity: Omit<Activity, 'id'> = {
       category: formData.category as CategoryName,
       activity: formData.activity.trim(),
-      startTime: formData.startTime,
-      endTime: formData.endTime,
+      startTime: startIso,
+      endTime: endIso,
       duration,
       notes: formData.notes,
-      date: new Date().toISOString().split('T')[0],
+      date: activityDate,
     };
 
     onAdd(activity);
 
     const now = new Date();
-    const later = new Date(now.getTime() + 50 * 60 * 1000);
+    const later = new Date(now.getTime() + 2 * 60 * 1000);
     setFormData({
       category: '',
       activity: '',
       startTime: now.toTimeString().slice(0, 5),
       endTime: later.toTimeString().slice(0, 5),
       notes: '',
-      targetDuration: 20,
+      targetDuration: 2,
     });
   };
 
@@ -207,7 +213,20 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
               type="number"
               min="1"
               value={formData.targetDuration}
-              onChange={(e) => setFormData({ ...formData, targetDuration: parseInt(e.target.value) || 20 })}
+              onChange={(e) => {
+                const duration = parseInt(e.target.value) || 2;
+                const activityDate = editingActivity ? editingActivity.date : new Date().toISOString().split('T')[0];
+                const startIso = new Date(`${activityDate}T${formData.startTime}:00`).toISOString();
+                const startObj = new Date(startIso);
+                const endObj = new Date(startObj.getTime() + duration * 60 * 1000);
+                const endTime = endObj.toTimeString().slice(0, 5);
+
+                setFormData({
+                  ...formData,
+                  targetDuration: duration,
+                  endTime: endTime
+                });
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -265,7 +284,7 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
                 className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center space-x-2"
               >
                 <Play size={18} />
-                <span>Start Stopwatch</span>
+                <span>Start</span>
               </button>
             )}
             <button

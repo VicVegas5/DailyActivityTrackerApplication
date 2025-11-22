@@ -26,8 +26,8 @@ export const ActivityTable: React.FC<ActivityTableProps> = ({
   };
 
   const sortedActivities = [...activities].sort((a, b) => {
-    const aValue = a[sortField];
-    const bValue = b[sortField];
+    const aValue = a[sortField] ?? '';
+    const bValue = b[sortField] ?? '';
 
     if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
     if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
@@ -35,6 +35,13 @@ export const ActivityTable: React.FC<ActivityTableProps> = ({
   });
 
   const formatTime = (time: string) => {
+    if (time.includes('T')) {
+      return new Date(time).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
     return new Date(`2000-01-01T${time}`).toLocaleTimeString([], {
       hour: '2-digit',
       minute: '2-digit',
