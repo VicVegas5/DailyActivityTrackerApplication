@@ -23,22 +23,69 @@ export const StopwatchScreen: React.FC<StopwatchScreenProps> = ({
   const [hasReachedTarget, setHasReachedTarget] = useState(false);
   const [notes, setNotes] = useState('');
 
+  const [startTimestamp, setStartTimestamp] = useState<number>(Date.now());
+  const STORAGE_KEY = 'stopwatch_session';
+
   useEffect(() => {
-    const interval = setInterval(() => {
-      setSeconds((prev) => {
-        const newSeconds = prev + 1;
-        const minutes = Math.floor(newSeconds / 60);
+    const savedSession = localStorage.getItem(STORAGE_KEY);
+    let start = Date.now();
 
-        if (minutes >= targetDuration && !hasReachedTarget) {
-          setHasReachedTarget(true);
+    if (savedSession) {
+      try {
+        const session = JSON.parse(savedSession);
+        // Resume if it matches the current activity context
+        if (session.category === category && session.activityName === activityName) {
+          start = session.startTime;
+          setNotes(session.notes || '');
         }
+      } catch (e) {
+        console.error('Failed to parse stopwatch session', e);
+      }
+    }
 
-        return newSeconds;
-      });
-    }, 1000);
+    setStartTimestamp(start);
+
+    // Save initial or resumed session
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      startTime: start,
+      category,
+      activityName,
+      targetDuration,
+      notes
+    }));
+
+    const updateTimer = () => {
+      const now = Date.now();
+      const elapsedSeconds = Math.floor((now - start) / 1000);
+      setSeconds(elapsedSeconds);
+
+      const minutes = Math.floor(elapsedSeconds / 60);
+      if (minutes >= targetDuration && !hasReachedTarget) {
+        setHasReachedTarget(true);
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(interval);
-  }, [targetDuration, hasReachedTarget]);
+  }, [category, activityName, targetDuration]); // Re-run if props change, but logic handles resume
+
+  // Persist notes
+  useEffect(() => {
+    const savedSession = localStorage.getItem(STORAGE_KEY);
+    if (savedSession) {
+      try {
+        const session = JSON.parse(savedSession);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          ...session,
+          notes
+        }));
+      } catch (e) {
+        // Ignore
+      }
+    }
+  }, [notes]);
 
   useEffect(() => {
     if (hasReachedTarget) {
@@ -51,8 +98,8 @@ export const StopwatchScreen: React.FC<StopwatchScreenProps> = ({
   const minutes = Math.floor(seconds / 60);
   const displaySeconds = seconds % 60;
 
-  const startTime = new Date();
-  startTime.setHours(startTime.getHours(), startTime.getMinutes(), 0);
+  const startTime = new Date(startTimestamp);
+  // startTime.setHours(startTime.getHours(), startTime.getMinutes(), 0); // Don't reset minutes/seconds, use actual start time
 
   const endTime = new Date();
   endTime.setSeconds(endTime.getSeconds() + seconds);
@@ -70,6 +117,7 @@ export const StopwatchScreen: React.FC<StopwatchScreenProps> = ({
   };
 
   const handleSave = () => {
+    localStorage.removeItem(STORAGE_KEY);
     const activity: Omit<Activity, 'id'> = {
       category,
       activity: activityName,
@@ -81,6 +129,11 @@ export const StopwatchScreen: React.FC<StopwatchScreenProps> = ({
     };
 
     onSave(activity);
+  };
+
+  const handleCancel = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    onCancel();
   };
 
   if (isMinimized) {
@@ -128,7 +181,7 @@ export const StopwatchScreen: React.FC<StopwatchScreenProps> = ({
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-bold text-gray-900 ml-8">Activity Timer</h2>
           <button
-            onClick={onCancel}
+            onClick={handleCancel}
             className="text-gray-500 hover:text-gray-700 transition-colors"
           >
             <X size={24} />
@@ -186,7 +239,7 @@ export const StopwatchScreen: React.FC<StopwatchScreenProps> = ({
 
             <div className="flex justify-end space-x-3 pt-4">
               <button
-                onClick={onCancel}
+                onClick={handleCancel}
                 className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
               >
                 Cancel
@@ -204,7 +257,7 @@ export const StopwatchScreen: React.FC<StopwatchScreenProps> = ({
             </div>
           </div>
         </div>
-      </div>
+      </div>I
     </div>
   );
 };

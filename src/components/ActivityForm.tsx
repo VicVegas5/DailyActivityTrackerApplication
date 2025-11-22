@@ -41,6 +41,25 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
         targetDuration: 20,
       });
     } else {
+      const savedSession = localStorage.getItem('stopwatch_session');
+      if (savedSession) {
+        try {
+          const session = JSON.parse(savedSession);
+          setFormData({
+            category: session.category,
+            activity: session.activityName,
+            startTime: new Date(session.startTime).toTimeString().slice(0, 5),
+            endTime: '',
+            notes: session.notes || '',
+            targetDuration: session.targetDuration,
+          });
+          setShowStopwatch(true);
+          return;
+        } catch (e) {
+          console.error('Failed to restore session', e);
+        }
+      }
+
       const now = new Date();
       const later = new Date(now.getTime() + 50 * 60 * 1000);
       setFormData({
