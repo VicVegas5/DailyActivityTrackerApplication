@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, List, Download, BarChart3, FileBarChart } from 'lucide-react';
+import { Plus, List, Download, BarChart3, FileBarChart, CheckCircle } from 'lucide-react';
 import { ActivityForm } from './components/ActivityForm';
 import { ActivityTable } from './components/ActivityTable';
 import { StatsCard } from './components/StatsCard';
@@ -15,6 +15,16 @@ function App() {
   const [isGraphViewOpen, setIsGraphViewOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+
+  useEffect(() => {
+    if (showSuccessToast) {
+      const timer = setTimeout(() => {
+        setShowSuccessToast(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessToast]);
 
   useEffect(() => {
     const savedSession = localStorage.getItem('stopwatch_session');
@@ -30,6 +40,7 @@ function App() {
     };
     setActivities([...activities, newActivity]);
     setIsFormOpen(false);
+    setShowSuccessToast(true);
   };
 
   const handleEditActivity = (activity: Activity) => {
@@ -47,6 +58,7 @@ function App() {
       setActivities(updatedActivities);
       setEditingActivity(null);
       setIsFormOpen(false);
+      setShowSuccessToast(true);
     }
   };
 
@@ -163,6 +175,13 @@ function App() {
           activities={activities}
         />
       </div>
+
+      {showSuccessToast && (
+        <div className="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2 z-50 transition-all duration-300 transform translate-y-0 opacity-100">
+          <CheckCircle size={20} />
+          <span className="font-medium">Record Saved Successfully</span>
+        </div>
+      )}
     </div>
   );
 }

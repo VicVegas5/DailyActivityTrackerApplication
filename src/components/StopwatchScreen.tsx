@@ -109,6 +109,7 @@ export const StopwatchScreen: React.FC<StopwatchScreenProps> = ({
     const now = Date.now();
     setStartTimestamp(now);
     setIsRunning(true);
+    setIsMinimized(true);
   };
 
   const handleSave = () => {
@@ -147,7 +148,7 @@ export const StopwatchScreen: React.FC<StopwatchScreenProps> = ({
   if (isMinimized) {
     return (
       <div
-        className="fixed bottom-4 left-4 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 z-50 w-72 transition-all duration-300 ease-in-out hover:scale-105 cursor-pointer"
+        className="fixed top-4 right-4 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 z-50 w-72 transition-all duration-300 ease-in-out hover:scale-105 cursor-pointer"
         onClick={() => setIsMinimized(false)}
       >
         <div className={`h-1.5 w-full bg-gradient-to-r ${getCategoryColor(category)} rounded-full mb-3`} />
