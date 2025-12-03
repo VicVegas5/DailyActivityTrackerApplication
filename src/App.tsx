@@ -8,6 +8,7 @@ import { ReportPage } from './components/ReportPage';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { Activity } from './types/Activity';
 import { exportToCSV } from './utils/fileExport';
+import { getLocalDateString } from './utils/dateUtils';
 
 function App() {
   const [activities, setActivities] = useLocalStorage<Activity[]>('daily-activities', []);
@@ -69,7 +70,7 @@ function App() {
   };
 
   const todayActivities = activities.filter(activity =>
-    activity.date === new Date().toISOString().split('T')[0]
+    activity.date === getLocalDateString()
   );
 
   return (

@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { X, Calendar, TrendingUp } from 'lucide-react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Activity } from '../types/Activity';
+import { getLocalDateString } from '../utils/dateUtils';
 
 interface GraphicalViewProps {
   isOpen: boolean;
@@ -13,7 +14,7 @@ type TimeFilter = 'day' | 'week' | 'quarter' | 'year';
 
 export const GraphicalView: React.FC<GraphicalViewProps> = ({ isOpen, onClose, activities }) => {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('week');
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(getLocalDateString());
 
   const getDateRange = (filter: TimeFilter, date: string): { start: Date; end: Date } => {
     const selectedDate = new Date(date);
@@ -164,8 +165,8 @@ export const GraphicalView: React.FC<GraphicalViewProps> = ({ isOpen, onClose, a
                   key={filter}
                   onClick={() => setTimeFilter(filter)}
                   className={`px-4 py-2 rounded-md font-medium transition-colors ${timeFilter === filter
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                 >
                   {filter.charAt(0).toUpperCase() + filter.slice(1)}

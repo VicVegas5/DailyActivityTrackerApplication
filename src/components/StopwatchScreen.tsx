@@ -3,6 +3,7 @@ import { X, Check, Play } from 'lucide-react';
 
 import { Activity } from '../types/Activity';
 import { CategoryName } from '../config/categories';
+import { getLocalDateString } from '../utils/dateUtils';
 
 interface StopwatchScreenProps {
   category: CategoryName;
@@ -134,7 +135,7 @@ export const StopwatchScreen: React.FC<StopwatchScreenProps> = ({
       endTime: new Date(endTimestamp).toISOString(),
       duration: roundedDuration,
       notes: '',
-      date: new Date().toISOString().split('T')[0],
+      date: getLocalDateString(),
     };
 
     onSave(activity);

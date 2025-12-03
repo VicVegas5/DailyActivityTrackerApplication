@@ -3,6 +3,7 @@ import { Save, X, Play } from 'lucide-react';
 import { Activity } from '../types/Activity';
 import { CATEGORIES, CategoryName } from '../config/categories';
 import { StopwatchScreen } from './StopwatchScreen';
+import { getLocalDateString } from '../utils/dateUtils';
 
 interface ActivityFormProps {
   onAdd: (activity: Omit<Activity, 'id'>) => void;
@@ -109,7 +110,7 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
       return;
     }
 
-    const activityDate = editingActivity ? editingActivity.date : new Date().toISOString().split('T')[0];
+    const activityDate = editingActivity ? editingActivity.date : getLocalDateString();
     const startIso = new Date(`${activityDate}T${formData.startTime}:00`).toISOString();
     const endIso = new Date(`${activityDate}T${formData.endTime}:00`).toISOString();
 
@@ -215,7 +216,7 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
               value={formData.targetDuration}
               onChange={(e) => {
                 const duration = parseInt(e.target.value) || 2;
-                const activityDate = editingActivity ? editingActivity.date : new Date().toISOString().split('T')[0];
+                const activityDate = editingActivity ? editingActivity.date : getLocalDateString();
                 const startIso = new Date(`${activityDate}T${formData.startTime}:00`).toISOString();
                 const startObj = new Date(startIso);
                 const endObj = new Date(startObj.getTime() + duration * 60 * 1000);
