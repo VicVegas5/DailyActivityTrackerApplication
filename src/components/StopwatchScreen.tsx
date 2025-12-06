@@ -4,6 +4,7 @@ import { X, Check, Play } from 'lucide-react';
 import { Activity } from '../types/Activity';
 import { CategoryName } from '../config/categories';
 import { getLocalDateString } from '../utils/dateUtils';
+import { playR2D2Alarm } from '../utils/soundUtils';
 
 interface StopwatchScreenProps {
   category: CategoryName;
@@ -86,6 +87,8 @@ export const StopwatchScreen: React.FC<StopwatchScreenProps> = ({
   useEffect(() => {
     if (hasReachedTarget) {
       setIsMinimized(false);
+      // Play R2D2 alarm sound
+      playR2D2Alarm();
     }
   }, [hasReachedTarget]);
 

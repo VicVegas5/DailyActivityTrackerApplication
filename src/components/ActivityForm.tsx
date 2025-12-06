@@ -26,7 +26,7 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
     startTime: editingActivity?.startTime || '',
     endTime: editingActivity?.endTime || '',
     notes: editingActivity?.notes || '',
-    targetDuration: 2,
+    targetDuration: 0,
   });
 
   const [showStopwatch, setShowStopwatch] = useState(false);
@@ -39,7 +39,7 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
         startTime: editingActivity.startTime.includes('T') ? new Date(editingActivity.startTime).toTimeString().slice(0, 5) : editingActivity.startTime,
         endTime: editingActivity.endTime.includes('T') ? new Date(editingActivity.endTime).toTimeString().slice(0, 5) : editingActivity.endTime,
         notes: editingActivity.notes || '',
-        targetDuration: 20,
+        targetDuration: 0,
       });
     } else {
       const savedSession = localStorage.getItem('stopwatch_session');
@@ -62,21 +62,21 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
       }
 
       const now = new Date();
-      const later = new Date(now.getTime() + 2 * 60 * 1000);
+      const later = new Date(now.getTime() + 0 * 60 * 1000);
       setFormData({
         category: '',
         activity: '',
         startTime: now.toTimeString().slice(0, 5),
         endTime: later.toTimeString().slice(0, 5),
         notes: '',
-        targetDuration: 2,
+        targetDuration: 0,
       });
     }
   }, [editingActivity]);
 
   const handleStartStopwatch = () => {
-    if (!formData.category || !formData.activity || !formData.targetDuration) {
-      alert('Please select a category, activity, and set a target duration');
+    if (!formData.category || !formData.activity) {
+      alert('Please select a category and activity');
       return;
     }
     setShowStopwatch(true);
@@ -87,14 +87,14 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
     setShowStopwatch(false);
 
     const now = new Date();
-    const later = new Date(now.getTime() + 50 * 60 * 1000);
+    const later = new Date(now.getTime() + 0 * 60 * 1000);
     setFormData({
       category: '',
       activity: '',
       startTime: now.toTimeString().slice(0, 5),
       endTime: later.toTimeString().slice(0, 5),
       notes: '',
-      targetDuration: 2,
+      targetDuration: 0,
     });
   };
 
@@ -133,14 +133,14 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
     onAdd(activity);
 
     const now = new Date();
-    const later = new Date(now.getTime() + 2 * 60 * 1000);
+    const later = new Date(now.getTime() + 0 * 60 * 1000);
     setFormData({
       category: '',
       activity: '',
       startTime: now.toTimeString().slice(0, 5),
       endTime: later.toTimeString().slice(0, 5),
       notes: '',
-      targetDuration: 2,
+      targetDuration: 0,
     });
   };
 
@@ -212,10 +212,10 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({ onAdd, onCancel, isO
             </label>
             <input
               type="number"
-              min="1"
+              min="0"
               value={formData.targetDuration}
               onChange={(e) => {
-                const duration = parseInt(e.target.value) || 2;
+                const duration = parseInt(e.target.value) || 0;
                 const activityDate = editingActivity ? editingActivity.date : getLocalDateString();
                 const startIso = new Date(`${activityDate}T${formData.startTime}:00`).toISOString();
                 const startObj = new Date(startIso);
