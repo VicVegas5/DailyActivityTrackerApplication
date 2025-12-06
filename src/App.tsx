@@ -1,17 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, List, Download, BarChart3, FileBarChart, CheckCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, List, BarChart3, FileBarChart, CheckCircle, Wifi, WifiOff, Cloud } from 'lucide-react';
 import { ActivityForm } from './components/ActivityForm';
 import { ActivityTable } from './components/ActivityTable';
 import { StatsCard } from './components/StatsCard';
 import { GraphicalView } from './components/GraphicalView';
 import { ReportPage } from './components/ReportPage';
-import { useLocalStorage } from './hooks/useLocalStorage';
+import { useFirebaseSync } from './hooks/useFirebaseSync';
 import { Activity } from './types/Activity';
-import { exportToCSV } from './utils/fileExport';
 import { getLocalDateString } from './utils/dateUtils';
 
 function App() {
-  const [activities, setActivities] = useLocalStorage<Activity[]>('daily-activities', []);
+  const { data: activities, updateData: setActivities, isOnline, isSyncing, error } = useFirebaseSync<Activity[]>('daily-activities', []);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isGraphViewOpen, setIsGraphViewOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
@@ -84,14 +83,35 @@ function App() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Activity Log</h1>
-                <p className="text-gray-600 mt-1">
-                  {new Date().toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </p>
+                <div className="flex items-center gap-3 mt-1">
+                  <p className="text-gray-600">
+                    {new Date().toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </p>
+                  {/* Sync Status Indicator */}
+                  <div className="flex items-center gap-1.5">
+                    {isSyncing ? (
+                      <>
+                        <Cloud className="w-4 h-4 text-blue-500 animate-pulse" />
+                        <span className="text-xs text-blue-600">Syncing...</span>
+                      </>
+                    ) : isOnline ? (
+                      <>
+                        <Wifi className="w-4 h-4 text-green-500" />
+                        <span className="text-xs text-green-600">Online</span>
+                      </>
+                    ) : (
+                      <>
+                        <WifiOff className="w-4 h-4 text-orange-500" />
+                        <span className="text-xs text-orange-600">Offline</span>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
             <div className="mt-4 sm:mt-0 flex flex-wrap gap-3">
@@ -112,15 +132,6 @@ function App() {
               >
                 <BarChart3 size={20} />
                 <span className="font-medium">Analytics</span>
-              </button>
-              <button
-                onClick={() => exportToCSV(activities, 'activity-log.csv')}
-                disabled={activities.length === 0}
-                className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Download CSV file"
-              >
-                <Download size={20} />
-                <span className="font-medium">Export CSV</span>
               </button>
               <button
                 onClick={() => setIsFormOpen(true)}
@@ -176,6 +187,17 @@ function App() {
           activities={activities}
         />
       </div>
+
+      {/* Error Notification */}
+      {error && (
+        <div className="fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2 z-50 max-w-md">
+          <WifiOff size={20} />
+          <div>
+            <p className="font-medium">Connection Issue</p>
+            <p className="text-sm text-red-100">Using offline mode. Changes will sync when online.</p>
+          </div>
+        </div>
+      )}
 
       {showSuccessToast && (
         <div className="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2 z-50 transition-all duration-300 transform translate-y-0 opacity-100">
